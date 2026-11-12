@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/flight/internal/src/config"
 	"github.com/flight/internal/src/delivery"
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository"
@@ -19,11 +20,17 @@ import (
 func main() {
 	log.Init()
 
+	cfg, err := config.InitConfig()
+	if err != nil {
+		log.Fatal("failed to init config : ", err)
+		return
+	}
+
 	// init provider
-	airAsiaProvider := airasia.Init("external/airasia_search_response.json")
-	batikAirProvider := batikair.Init("external/batik_air_search_response.json")
-	garudaIndonesiaProvider := garudaindonesia.Init("external/garuda_indonesia_search_response.json")
-	lionAirProvider := lionair.Init("external/lion_air_search_response.json")
+	airAsiaProvider := airasia.Init(cfg.MockDataPath.AirAsia)
+	batikAirProvider := batikair.Init(cfg.MockDataPath.BatikAir)
+	garudaIndonesiaProvider := garudaindonesia.Init(cfg.MockDataPath.GarudaIndonesia)
+	lionAirProvider := lionair.Init(cfg.MockDataPath.LionAir)
 
 	// initRepo
 	repo := repository.Init(
@@ -48,7 +55,7 @@ func main() {
 
 	// start server
 	log.Info("Starting the server...")
-	err := http.ListenAndServe(":8000", r)
+	err = http.ListenAndServe(":8000", r)
 	if err != nil {
 		log.Fatal("can't start server", err)
 	}

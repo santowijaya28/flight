@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/usecase"
 	"github.com/flight/pkg/log"
+	"github.com/flight/pkg/response"
 )
 
 type delivery struct {
@@ -38,7 +38,11 @@ func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
 		dd, err := time.Parse("2006-01-02", dt)
 		if err != nil {
 			err = fmt.Errorf("invalid departure_time format: format should be 'YYYY-MM-DD' : %+w", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			response.WriteErrorResponse(w, response.Response{
+				Data:           nil,
+				Error:          err.Error(),
+				HttpStatusCode: http.StatusBadRequest,
+			})
 			return
 		}
 		param.DepartureDate = dd
@@ -48,27 +52,59 @@ func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
 	if pass != "" {
 		passenger, err := strconv.Atoi(pass)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			response.WriteErrorResponse(w, response.Response{
+				Data:           nil,
+				Error:          err.Error(),
+				HttpStatusCode: http.StatusBadRequest,
+			})
 			return
 		}
 		param.Passengers = passenger
 	}
 	param.CabinClass = r.URL.Query().Get("cabin_class")
 
+	err := validateSearchInput(param)
+	if err != nil {
+		response.WriteErrorResponse(w, response.Response{
+			Data:           nil,
+			Error:          err.Error(),
+			HttpStatusCode: http.StatusBadRequest,
+		})
+		return
+	}
+
 	resp, err := d.useCase.Search(r.Context(), param)
 	if err != nil {
 		log.Errorf("failed to search flight %s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteErrorResponse(w, response.Response{
+			Data:           nil,
+			Error:          err.Error(),
+			HttpStatusCode: http.StatusInternalServerError,
+		})
 		return
 	}
 
-	data, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
-		return
+	response.WriteSuccessResponse(w, response.Response{
+		Data: resp,
+	})
+}
+
+func validateSearchInput(param model.SearchInput) error {
+	if param.DepartureDate.IsZero() {
+		return fmt.Errorf("empty departure_date: %+w", model.ErrInvalidInput)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	if param.Origin == "" {
+		return fmt.Errorf("empty origin: %+w", model.ErrInvalidInput)
+	}
+
+	if param.Destination == "" {
+		return fmt.Errorf("empty destination: %+w", model.ErrInvalidInput)
+	}
+
+	if param.Passengers <= 0 {
+		return fmt.Errorf("invalid passenger: %+w", model.ErrInvalidInput)
+	}
+
+	return nil
 }
