@@ -46,10 +46,6 @@ func (r *repository) Search(ctx context.Context, in model.SearchInput) (res mode
 		successfulProviders++
 	}
 
-	res.TotalResult = len(res.Flights)
-	res.IsSuccess = successfulProviders > 0
-	res.CacheHit = false
-
 	if len(errs) > 0 {
 		err = errors.Join(errs...)
 	}

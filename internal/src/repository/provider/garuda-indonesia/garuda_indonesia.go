@@ -79,7 +79,7 @@ func parseResponseData(in GarudaIndonesiaSearchResp) (res model.SearchResult, er
 		}
 
 		totalMinutes := (arrivalTS - departureTS) / 60
-		baggage := parseGarudaBaggage(f.Baggage)
+		baggage := model.NormalizeBaggage(parseGarudaBaggage(f.Baggage))
 
 		fl := model.Flight{
 			ID:       fmt.Sprintf("%s_%s", f.FlightID, model.ProviderGarudaIndonesia),

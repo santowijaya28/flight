@@ -10,10 +10,7 @@ type SearchInput struct {
 }
 
 type SearchResult struct {
-	TotalResult int      `json:"total_result"`
-	IsSuccess   bool     `json:"is_success"`
-	CacheHit    bool     `json:"cache_hit"`
-	Flights     []Flight `json:"flights"`
+	Flights []Flight `json:"flights"`
 }
 
 type Flight struct {

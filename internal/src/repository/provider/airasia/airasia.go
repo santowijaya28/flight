@@ -83,10 +83,10 @@ func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err er
 			AvailableSeats: f.Seats,
 			CabinClass:     f.CabinClass,
 			Amenities:      model.NormalizeAmenities(nil),
-			Baggage: model.Baggage{
+			Baggage: model.NormalizeBaggage(model.Baggage{
 				CarryOn: baggage.CarryOn,
 				Checked: baggage.Checked,
-			},
+			}),
 		}
 
 		res.Flights = append(res.Flights, fligt)

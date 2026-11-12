@@ -10,6 +10,7 @@ import (
 	"github.com/flight/internal/src/repository/provider/airasia"
 	batikair "github.com/flight/internal/src/repository/provider/batik-air"
 	garudaindonesia "github.com/flight/internal/src/repository/provider/garuda-indonesia"
+	lionair "github.com/flight/internal/src/repository/provider/lion-air"
 	"github.com/flight/internal/src/usecase"
 	"github.com/flight/pkg/log"
 	"github.com/gorilla/mux"
@@ -19,16 +20,18 @@ func main() {
 	log.Init()
 
 	// init provider
-	airAsia := airasia.Init("external/airasia_search_response.json")
-	batikAir := batikair.Init("external/batik_air_search_response.json")
-	garudaIndonesia := garudaindonesia.Init("external/garuda_indonesia_search_response.json")
+	airAsiaProvider := airasia.Init("external/airasia_search_response.json")
+	batikAirProvider := batikair.Init("external/batik_air_search_response.json")
+	garudaIndonesiaProvider := garudaindonesia.Init("external/garuda_indonesia_search_response.json")
+	lionAirProvider := lionair.Init("external/lion_air_search_response.json")
 
 	// initRepo
 	repo := repository.Init(
 		map[string]provider.Provider{
-			model.ProviderAirAsia:         airAsia,
-			model.ProviderBatikAir:        batikAir,
-			model.ProviderGarudaIndonesia: garudaIndonesia,
+			model.ProviderAirAsia:         airAsiaProvider,
+			model.ProviderBatikAir:        batikAirProvider,
+			model.ProviderGarudaIndonesia: garudaIndonesiaProvider,
+			model.ProviderLionAir:         lionAirProvider,
 		},
 	)
 
