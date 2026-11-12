@@ -80,6 +80,7 @@ func parseResponseData(in BatikAirSearchResp) (res model.SearchResult, err error
 			},
 			AvailableSeats: int64(f.SeatsAvailable),
 			CabinClass:     model.GetCabinClass(f.Fare.Class),
+			Aircraft:       model.OptionalAircraft(f.AircraftModel),
 			Amenities:      model.NormalizeAmenities(f.OnboardServices),
 			Baggage:        model.NormalizeBaggage(parseBatikAirBaggage(f.BaggageInfo)),
 		}

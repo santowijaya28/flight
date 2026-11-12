@@ -102,6 +102,7 @@ func parseResponseData(in LionAirSearchResp) (res model.SearchResult, err error)
 			},
 			AvailableSeats: int64(f.SeatsLeft),
 			CabinClass:     normalizeCabinClass(f.Pricing.FareType),
+			Aircraft:       model.OptionalAircraft(f.PlaneType),
 			Amenities:      model.NormalizeAmenities(amenities),
 			Baggage: model.NormalizeBaggage(model.Baggage{
 				CarryOn: f.Services.BaggageAllowance.Cabin,

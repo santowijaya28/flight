@@ -25,9 +25,13 @@ type Flight struct {
 	Price          Price     `json:"price"`
 	AvailableSeats int64     `json:"available_seats"`
 	CabinClass     string    `json:"cabin_class"`
-	// Aircraft // TODO: define
-	Amenities []string `json:"amenities"`
-	Baggage   Baggage  `json:"baggage"`
+	Aircraft       *Aircraft `json:"aircraft"`
+	Amenities      []string  `json:"amenities"`
+	Baggage        Baggage   `json:"baggage"`
+}
+
+type Aircraft struct {
+	Model string `json:"model"`
 }
 
 type AirLine struct {

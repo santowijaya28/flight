@@ -113,6 +113,7 @@ func parseResponseData(in GarudaIndonesiaSearchResp) (res model.SearchResult, er
 			},
 			AvailableSeats: int64(f.AvailableSeats),
 			CabinClass:     f.FareClass,
+			Aircraft:       model.OptionalAircraft(f.Aircraft),
 			Baggage:        baggage,
 		}
 
