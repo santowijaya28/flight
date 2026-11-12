@@ -9,6 +9,7 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/usecase"
+	"github.com/flight/pkg/log"
 )
 
 type delivery struct {
@@ -56,6 +57,7 @@ func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := d.useCase.Search(r.Context(), param)
 	if err != nil {
+		log.Errorf("failed to search flight %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

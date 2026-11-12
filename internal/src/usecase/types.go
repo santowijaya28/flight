@@ -7,5 +7,5 @@ import (
 )
 
 type Usecase interface {
-	Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error)
+	Search(ctx context.Context, in model.SearchInput) (res model.SearchResponse, err error)
 }

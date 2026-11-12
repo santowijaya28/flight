@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/provider"
@@ -13,6 +14,7 @@ import (
 func (r *repository) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
 	results := make(chan providerResult, len(r.flightProvider))
 
+	t := time.Now()
 	var wg sync.WaitGroup
 	for name, p := range r.flightProvider {
 		wg.Add(1)
@@ -48,6 +50,17 @@ func (r *repository) Search(ctx context.Context, in model.SearchInput) (res mode
 
 	if len(errs) > 0 {
 		err = errors.Join(errs...)
+	}
+
+	res.ProvidersFailed = len(errs)
+	res.ProvidersQueried = len(r.flightProvider)
+	res.ProvidersSucceeded = len(r.flightProvider) - len(errs)
+	res.TotalResults = len(res.Flights)
+	res.SearchTimeMs = int64(time.Since(t).Milliseconds())
+
+	if len(r.flightProvider) > 0 && len(errs) == len(r.flightProvider) {
+		err = errors.Join(model.ErrAllProviderDown, err)
+		return res, err
 	}
 
 	return res, err
