@@ -3,14 +3,17 @@ package delivery
 import (
 	"net/http"
 
-	"github.com/flight/internal/src/repository"
+	"github.com/flight/internal/src/usecase"
 )
 
 type delivery struct {
+	useCase usecase.Usecase
 }
 
-func Init(repo repository.ProviderRepo) *delivery {
-	return &delivery{}
+func Init(useCase usecase.Usecase) *delivery {
+	return &delivery{
+		useCase: useCase,
+	}
 }
 
 func (d *delivery) Ping(w http.ResponseWriter, r *http.Request) {

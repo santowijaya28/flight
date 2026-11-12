@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/flight/internal/src/delivery"
+	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository"
 	"github.com/flight/internal/src/repository/provider"
 	"github.com/flight/internal/src/repository/provider/airasia"
+	"github.com/flight/internal/src/usecase"
 	"github.com/flight/pkg/log"
 	"github.com/gorilla/mux"
 )
@@ -20,12 +22,15 @@ func main() {
 	// initRepo
 	repo := repository.Init(
 		map[string]provider.Provider{
-			"airasia": airAsia,
+			model.ProviderAirAsia: airAsia,
 		},
 	)
 
+	// init usecase
+	usecase := usecase.Init(repo)
+
 	// init delivery
-	dlv := delivery.Init(repo)
+	dlv := delivery.Init(usecase)
 
 	r := mux.NewRouter()
 
