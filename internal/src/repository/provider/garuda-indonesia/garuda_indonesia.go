@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/flight/internal/src/model"
+	"github.com/flight/internal/src/repository/filter"
 )
 
 func (g *gi) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -31,10 +32,10 @@ func (g *gi) Search(ctx context.Context, in model.SearchInput) (res model.Search
 		return res, fmt.Errorf("failed when getting data from garida-indonesia")
 	}
 
-	return parseResponseData(resp)
+	return parseResponseData(resp, in)
 }
 
-func parseResponseData(in GarudaIndonesiaSearchResp) (res model.SearchResult, err error) {
+func parseResponseData(in GarudaIndonesiaSearchResp, criteria model.SearchInput) (res model.SearchResult, err error) {
 
 	for _, f := range in.Flights {
 		departureAirport := strings.ToUpper(f.Departure.Airport)
@@ -117,7 +118,9 @@ func parseResponseData(in GarudaIndonesiaSearchResp) (res model.SearchResult, er
 			Baggage:        baggage,
 		}
 
-		res.Flights = append(res.Flights, fl)
+		if filter.MatchesFlight(fl, criteria) {
+			res.Flights = append(res.Flights, fl)
+		}
 	}
 	return
 }

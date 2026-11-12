@@ -2,7 +2,10 @@ package delivery
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/usecase"
@@ -25,7 +28,33 @@ func (d *delivery) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
-	resp, err := d.useCase.Search(r.Context(), model.SearchInput{})
+	param := model.SearchInput{}
+
+	param.Origin = r.URL.Query().Get("origin")
+	param.Destination = r.URL.Query().Get("destination")
+	dt := r.URL.Query().Get("departure_date")
+	if dt != "" {
+		dd, err := time.Parse("2006-01-02", dt)
+		if err != nil {
+			err = fmt.Errorf("invalid departure_time format: format should be 'YYYY-MM-DD' : %+w", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		param.DepartureDate = dd
+	}
+
+	pass := r.URL.Query().Get("passengers")
+	if pass != "" {
+		passenger, err := strconv.Atoi(pass)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		param.Passengers = passenger
+	}
+	param.CabinClass = r.URL.Query().Get("cabin_class")
+
+	resp, err := d.useCase.Search(r.Context(), param)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

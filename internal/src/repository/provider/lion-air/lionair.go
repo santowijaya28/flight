@@ -10,6 +10,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/flight/internal/src/model"
+	"github.com/flight/internal/src/repository/filter"
 )
 
 func (l *lr) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -32,15 +33,17 @@ func (l *lr) Search(ctx context.Context, in model.SearchInput) (res model.Search
 		return res, fmt.Errorf("failed when getting data from lion-air")
 	}
 
-	return parseResponseData(resp)
+	return parseResponseData(resp, in)
 }
 
-func parseResponseData(in LionAirSearchResp) (res model.SearchResult, err error) {
+func parseResponseData(in LionAirSearchResp, criteria model.SearchInput) (res model.SearchResult, err error) {
 	res = model.SearchResult{
 		Flights: make([]model.Flight, 0, len(in.Data.AvailableFlights)),
 	}
 
 	for _, f := range in.Data.AvailableFlights {
+		cabinClass := normalizeCabinClass(f.Pricing.FareType)
+
 		departureDatetime, departureTS, err := parseLionAirTime(
 			f.Schedule.Departure,
 			f.Schedule.DepartureTimezone,
@@ -101,7 +104,7 @@ func parseResponseData(in LionAirSearchResp) (res model.SearchResult, err error)
 				Currency: f.Pricing.Currency,
 			},
 			AvailableSeats: int64(f.SeatsLeft),
-			CabinClass:     normalizeCabinClass(f.Pricing.FareType),
+			CabinClass:     cabinClass,
 			Aircraft:       model.OptionalAircraft(f.PlaneType),
 			Amenities:      model.NormalizeAmenities(amenities),
 			Baggage: model.NormalizeBaggage(model.Baggage{
@@ -110,7 +113,9 @@ func parseResponseData(in LionAirSearchResp) (res model.SearchResult, err error)
 			}),
 		}
 
-		res.Flights = append(res.Flights, flight)
+		if filter.MatchesFlight(flight, criteria) {
+			res.Flights = append(res.Flights, flight)
+		}
 	}
 
 	return res, nil

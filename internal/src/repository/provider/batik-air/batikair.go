@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/flight/internal/src/model"
+	"github.com/flight/internal/src/repository/filter"
 )
 
 func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -32,11 +33,13 @@ func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.
 		return res, fmt.Errorf("error when getting data from batikair: %s", resp.Message)
 	}
 
-	return parseResponseData(resp)
+	return parseResponseData(resp, in)
 }
 
-func parseResponseData(in BatikAirSearchResp) (res model.SearchResult, err error) {
+func parseResponseData(in BatikAirSearchResp, criteria model.SearchInput) (res model.SearchResult, err error) {
 	for _, f := range in.Results {
+		cabinClass := model.GetCabinClass(f.Fare.Class)
+
 		departureDatetime, departureTS, err := parseBatikAirTime(f.DepartureDateTime)
 		if err != nil {
 			return res, err
@@ -79,12 +82,14 @@ func parseResponseData(in BatikAirSearchResp) (res model.SearchResult, err error
 				Currency: f.Fare.CurrencyCode,
 			},
 			AvailableSeats: int64(f.SeatsAvailable),
-			CabinClass:     model.GetCabinClass(f.Fare.Class),
+			CabinClass:     cabinClass,
 			Aircraft:       model.OptionalAircraft(f.AircraftModel),
 			Amenities:      model.NormalizeAmenities(f.OnboardServices),
 			Baggage:        model.NormalizeBaggage(parseBatikAirBaggage(f.BaggageInfo)),
 		}
-		res.Flights = append(res.Flights, fl)
+		if filter.MatchesFlight(fl, criteria) {
+			res.Flights = append(res.Flights, fl)
+		}
 	}
 
 	return

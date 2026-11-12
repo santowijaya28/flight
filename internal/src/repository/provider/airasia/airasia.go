@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/flight/internal/src/model"
+	"github.com/flight/internal/src/repository/filter"
 )
 
 func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -32,10 +33,10 @@ func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.S
 		return res, fmt.Errorf("Status is not ok")
 	}
 
-	return parseResponseData(resp)
+	return parseResponseData(resp, in)
 }
 
-func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err error) {
+func parseResponseData(in AirAsiaSearchResponse, criteria model.SearchInput) (res model.SearchResult, err error) {
 
 	for _, f := range in.Flights {
 		departureDatetime, departureTS, err := parseAirAsiaTime(f.DepartTime)
@@ -89,7 +90,9 @@ func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err er
 			}),
 		}
 
-		res.Flights = append(res.Flights, fligt)
+		if filter.MatchesFlight(fligt, criteria) {
+			res.Flights = append(res.Flights, fligt)
+		}
 	}
 
 	return
