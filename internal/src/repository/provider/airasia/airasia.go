@@ -28,15 +28,14 @@ func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.S
 		return res, fmt.Errorf("error unmarshal data %+w", err)
 	}
 
+	if resp.Status != "ok" {
+		return res, fmt.Errorf("Status is not ok")
+	}
+
 	return parseResponseData(resp)
 }
 
 func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err error) {
-	res = model.SearchResult{
-		IsSuccess:   in.Status == "ok",
-		TotalResult: len(in.Flights),
-		CacheHit:    false, //TODO: fix
-	}
 
 	for _, f := range in.Flights {
 		departureDatetime, departureTS, err := parseAirAsiaTime(f.DepartTime)
@@ -54,7 +53,7 @@ func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err er
 
 		fligt := model.Flight{
 			ID:       fmt.Sprintf("%s_%s", f.FlightCode, f.Airline),
-			Provider: f.Airline,
+			Provider: model.ProviderAirAsia,
 			Airline: model.AirLine{
 				Name: f.Airline,
 				Code: f.FlightCode[0:2],
