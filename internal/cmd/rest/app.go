@@ -1,0 +1,40 @@
+package main
+
+import (
+	"net/http"
+
+	"github.com/flight/internal/src/delivery"
+	"github.com/flight/internal/src/repository"
+	"github.com/flight/internal/src/repository/provider"
+	"github.com/flight/internal/src/repository/provider/airasia"
+	"github.com/flight/pkg/log"
+	"github.com/gorilla/mux"
+)
+
+func main() {
+	log.Init()
+
+	// init provider
+	airAsia := airasia.Init("external/airasia_search_response.json")
+
+	// initRepo
+	repo := repository.Init(
+		map[string]provider.Provider{
+			"airasia": airAsia,
+		},
+	)
+
+	// init delivery
+	dlv := delivery.Init(repo)
+
+	r := mux.NewRouter()
+
+	r.Handle("/ping", http.HandlerFunc(dlv.Ping)).Methods("GET")
+
+	// start server
+	log.Info("Starting the server...")
+	err := http.ListenAndServe(":8000", r)
+	if err != nil {
+		log.Fatal("can't start server", err)
+	}
+}
