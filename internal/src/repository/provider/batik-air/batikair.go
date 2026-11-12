@@ -14,7 +14,7 @@ import (
 
 func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
 	if b.dataPath == "" {
-		return res, fmt.Errorf("empty path for airasia provider")
+		return res, fmt.Errorf("empty path for batik-air provider")
 	}
 
 	data, err := os.ReadFile(b.dataPath)
@@ -54,7 +54,7 @@ func parseResponseData(in BatikAirSearchResp) (res model.SearchResult, err error
 			Provider: model.ProviderBatikAir,
 			Airline: model.AirLine{
 				Name: f.AirlineName,
-				Code: f.FlightNumber[0:2],
+				Code: f.AirlineIATA,
 			},
 			FlightNumber: f.FlightNumber,
 			Departure: model.Departure{
@@ -80,7 +80,7 @@ func parseResponseData(in BatikAirSearchResp) (res model.SearchResult, err error
 			},
 			AvailableSeats: int64(f.SeatsAvailable),
 			CabinClass:     model.GetCabinClass(f.Fare.Class),
-			Amenities:      f.OnboardServices,
+			Amenities:      model.NormalizeAmenities(f.OnboardServices),
 			Baggage:        parseBatikAirBaggage(f.BaggageInfo),
 		}
 		res.Flights = append(res.Flights, fl)

@@ -82,7 +82,7 @@ func parseResponseData(in AirAsiaSearchResponse) (res model.SearchResult, err er
 			},
 			AvailableSeats: f.Seats,
 			CabinClass:     f.CabinClass,
-			Amenities:      make([]string, 0),
+			Amenities:      model.NormalizeAmenities(nil),
 			Baggage: model.Baggage{
 				CarryOn: baggage.CarryOn,
 				Checked: baggage.Checked,
