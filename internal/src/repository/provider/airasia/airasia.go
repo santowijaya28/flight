@@ -11,11 +11,16 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/filter"
+	"github.com/flight/internal/src/repository/provider"
 )
 
 func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
 	if a.dataPath == "" {
 		return res, fmt.Errorf("empty path for airasia provider")
+	}
+
+	if err := provider.Simulate(ctx, "airasia", 50*time.Millisecond, 150*time.Millisecond, 10); err != nil {
+		return res, err
 	}
 
 	data, err := os.ReadFile(a.dataPath)

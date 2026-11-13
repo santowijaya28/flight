@@ -10,11 +10,16 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/filter"
+	"github.com/flight/internal/src/repository/provider"
 )
 
 func (g *gi) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
 	if g.datapath == "" {
 		return res, fmt.Errorf("empty path for garuda-indonesia provider")
+	}
+
+	if err := provider.Simulate(ctx, "garuda-indonesia", 50*time.Millisecond, 100*time.Millisecond, 0); err != nil {
+		return res, err
 	}
 
 	data, err := os.ReadFile(g.datapath)

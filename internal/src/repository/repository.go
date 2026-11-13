@@ -9,6 +9,7 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/provider"
+	"github.com/flight/pkg/log"
 )
 
 func (r *repository) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -41,6 +42,7 @@ func (r *repository) Search(ctx context.Context, in model.SearchInput) (res mode
 		res.Flights = append(res.Flights, result.res.Flights...)
 
 		if result.err != nil {
+			log.Errorf("error when getting data from %s: %s", result.name, result.err.Error())
 			errs = append(errs, fmt.Errorf("%s: %w", result.name, result.err))
 			continue
 		}

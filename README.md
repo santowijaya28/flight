@@ -26,6 +26,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - Normalized baggage, amenities, aircraft, duration, and price
 - IDR price formatting, for example `Rp 1.250.000`
 - Arrival-after-departure validation
+- Simulated provider latency and AirAsia 10% failure rate
 - Bounded in-memory LRU search cache with a 5-minute TTL and `cache_hit` metadata
 
 ## Project structure
@@ -329,6 +330,21 @@ make openapi
 
 You can open the file with Swagger Editor, Redoc, Postman, or another OpenAPI-compatible tool.
 
+## Mock provider behavior
+
+Provider calls simulate real-world latency:
+
+| Provider | Delay |
+|---|---|
+| Garuda Indonesia | 50–100ms |
+| Lion Air | 100–200ms |
+| Batik Air | 200–400ms |
+| AirAsia | 50–150ms |
+
+AirAsia additionally has a **10% simulated failure rate**. A failed AirAsia call is treated as a provider error.
+
+Because responses are cached, repeated identical searches may return immediately with `cache_hit: true`. Use a different search or sort parameter to observe the provider delays again.
+
 ## Caching
 
 Search results are cached in memory using a bounded LRU cache with a 5-minute TTL and a maximum of 10,000 entries. The cache is injected into the usecase from the application entry point, so the cache implementation can be replaced without changing the usecase logic.
@@ -373,6 +389,5 @@ make openapi   # Show OpenAPI specification path
 
 ## Notes and current limitations
 
-- Mock provider delays and the AirAsia failure simulation are not implemented yet.
 - Cross-provider price comparison for the same flight and best-value ranking are not implemented yet.
 - The project currently has no automated test files; `make test` compiles and runs the Go test suite.

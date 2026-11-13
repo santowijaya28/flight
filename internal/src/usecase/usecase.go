@@ -23,17 +23,19 @@ func (u *usecase) Search(ctx context.Context, in model.SearchInput) (response mo
 		}
 	}
 
-	res, err := u.repo.Search(ctx, in)
-	if errors.Is(err, model.ErrAllProviderDown) {
-		return response, err
+	res, providerErr := u.repo.Search(ctx, in)
+	if errors.Is(providerErr, model.ErrAllProviderDown) {
+		return response, providerErr
 	}
 
 	sortFlights(res.Flights, sortOptions)
 	response = buildSearchResponse(in, res, false, res.SearchTimeMs)
 
-	if cacheKeyErr == nil && err == nil {
+	// Partial provider failures are logged by the repository and returned as
+	// successful partial results. Only cache fully successful searches.
+	if cacheKeyErr == nil && providerErr == nil {
 		u.cache.Set(cacheKey, res)
 	}
 
-	return
+	return response, nil
 }

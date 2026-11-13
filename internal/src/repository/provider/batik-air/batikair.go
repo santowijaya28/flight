@@ -11,11 +11,16 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/filter"
+	"github.com/flight/internal/src/repository/provider"
 )
 
 func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
 	if b.dataPath == "" {
 		return res, fmt.Errorf("empty path for batik-air provider")
+	}
+
+	if err := provider.Simulate(ctx, "batik-air", 200*time.Millisecond, 400*time.Millisecond, 0); err != nil {
+		return res, err
 	}
 
 	data, err := os.ReadFile(b.dataPath)
