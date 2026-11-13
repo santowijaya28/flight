@@ -29,7 +29,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - Arrival-after-departure validation
 - Simulated provider latency and AirAsia 10% failure rate
 - Per-provider timeout and retry with exponential backoff
-- Bounded in-memory LRU search cache with a 5-minute TTL and `cache_hit` metadata
+- Bounded in-memory LRU search cache with a 30-second TTL and `cache_hit` metadata
 
 ## Project structure
 
@@ -267,7 +267,7 @@ curl -s --get 'http://localhost:8000/search' \
   | jq '.metadata.cache_hit'
 ```
 
-The first response returns `false`; an identical request within 5 minutes returns `true`.
+The first response returns `false`; an identical request within 30 seconds returns `true`.
 
 Invalid request example:
 
@@ -416,7 +416,7 @@ Configuration or parsing errors are not retried. If a provider still fails after
 
 ## Caching
 
-Search results are cached in memory using a bounded LRU cache with a 5-minute TTL and a maximum of 10,000 entries. The cache is injected into the usecase from the application entry point, so the cache implementation can be replaced without changing the usecase logic.
+Search results are cached in memory using a bounded LRU cache with a 30-second TTL and a maximum of 10,000 entries. The cache is injected into the usecase from the application entry point, so the cache implementation can be replaced without changing the usecase logic.
 
 The cache key includes the full normalized search input, including filters and sort keys.
 
@@ -444,7 +444,7 @@ LionAir = "external/lion_air_search_response.json"
 
 [Cache]
 MaxEntries = 10000
-TTLSeconds = 300
+TTLSeconds = 30
 
 [Provider]
 TimeoutMs = 1000
@@ -462,6 +462,7 @@ make test      # Run Go tests
 make vet       # Run go vet
 make fmt       # Format all Go files
 make tidy      # Run go mod tidy
+make mocks     # Generate usecase mocks
 make clean     # Remove build artifacts
 make openapi   # Show OpenAPI specification path
 ```

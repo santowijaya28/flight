@@ -5,7 +5,7 @@ BIN_DIR := bin
 CMD_PATH := ./internal/cmd/rest
 GO ?= go
 
-.PHONY: help run build test vet fmt tidy clean openapi
+.PHONY: help run build test vet fmt tidy mocks clean openapi
 
 help:
 	@printf "Flight Search API\n\n"
@@ -16,6 +16,7 @@ help:
 	@printf "  make vet       Run go vet\n"
 	@printf "  make fmt       Format all Go files\n"
 	@printf "  make tidy      Run go mod tidy\n"
+	@printf "  make mocks     Generate mocks\n"
 	@printf "  make clean     Remove build artifacts\n"
 	@printf "  make openapi   Show the OpenAPI specification path\n"
 
@@ -37,6 +38,9 @@ fmt:
 
 tidy:
 	$(GO) mod tidy
+
+mocks:
+	$(GO) generate ./internal/src/usecase
 
 clean:
 	rm -rf $(BIN_DIR)
