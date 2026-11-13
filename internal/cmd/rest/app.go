@@ -19,11 +19,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	searchCacheMaxEntries = 10_000
-	searchCacheTTL        = 5 * time.Minute
-)
-
 func main() {
 	log.Init()
 
@@ -34,10 +29,10 @@ func main() {
 	}
 
 	// init provider
-	airAsiaProvider := airasia.Init(cfg.MockDataPath.AirAsia)
-	batikAirProvider := batikair.Init(cfg.MockDataPath.BatikAir)
-	garudaIndonesiaProvider := garudaindonesia.Init(cfg.MockDataPath.GarudaIndonesia)
-	lionAirProvider := lionair.Init(cfg.MockDataPath.LionAir)
+	airAsiaProvider := withProviderResilience(airasia.Init(cfg.MockDataPath.AirAsia), cfg.Provider)
+	batikAirProvider := withProviderResilience(batikair.Init(cfg.MockDataPath.BatikAir), cfg.Provider)
+	garudaIndonesiaProvider := withProviderResilience(garudaindonesia.Init(cfg.MockDataPath.GarudaIndonesia), cfg.Provider)
+	lionAirProvider := withProviderResilience(lionair.Init(cfg.MockDataPath.LionAir), cfg.Provider)
 
 	// initRepo
 	repo := repository.Init(
@@ -50,7 +45,10 @@ func main() {
 	)
 
 	// init cache
-	searchCache, err := cache.New[model.SearchResult](searchCacheMaxEntries, searchCacheTTL)
+	searchCache, err := cache.New[model.SearchResult](
+		cfg.Cache.MaxEntries,
+		time.Duration(cfg.Cache.TTLSeconds)*time.Second,
+	)
 	if err != nil {
 		log.Fatal("failed to init search cache: ", err)
 		return
@@ -73,4 +71,14 @@ func main() {
 	if err != nil {
 		log.Fatal("can't start server", err)
 	}
+}
+
+func withProviderResilience(next provider.Provider, cfg config.ProviderConfig) provider.Provider {
+	return provider.WithResilience(
+		next,
+		time.Duration(cfg.TimeoutMs)*time.Millisecond,
+		cfg.MaxAttempts,
+		time.Duration(cfg.InitialBackoffMs)*time.Millisecond,
+		time.Duration(cfg.MaxBackoffMs)*time.Millisecond,
+	)
 }

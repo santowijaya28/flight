@@ -11,7 +11,7 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/filter"
-	"github.com/flight/internal/src/repository/provider"
+	"github.com/flight/pkg/simulation"
 )
 
 func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -19,7 +19,7 @@ func (b *batikAir) Search(ctx context.Context, in model.SearchInput) (res model.
 		return res, fmt.Errorf("empty path for batik-air provider")
 	}
 
-	if err := provider.Simulate(ctx, "batik-air", 200*time.Millisecond, 400*time.Millisecond, 0); err != nil {
+	if err := simulation.Simulate(ctx, "batik-air", 200*time.Millisecond, 400*time.Millisecond, 0); err != nil {
 		return res, err
 	}
 

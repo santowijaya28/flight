@@ -11,7 +11,7 @@ import (
 
 	"github.com/flight/internal/src/model"
 	"github.com/flight/internal/src/repository/filter"
-	"github.com/flight/internal/src/repository/provider"
+	"github.com/flight/pkg/simulation"
 )
 
 func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error) {
@@ -19,7 +19,7 @@ func (a *airasia) Search(ctx context.Context, in model.SearchInput) (res model.S
 		return res, fmt.Errorf("empty path for airasia provider")
 	}
 
-	if err := provider.Simulate(ctx, "airasia", 50*time.Millisecond, 150*time.Millisecond, 10); err != nil {
+	if err := simulation.Simulate(ctx, "airasia", 50*time.Millisecond, 150*time.Millisecond, 10); err != nil {
 		return res, err
 	}
 

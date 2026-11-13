@@ -1,17 +1,22 @@
-package provider
+package simulation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand/v2"
 	"time"
 )
 
-var Simulate = func(ctx context.Context,
+var ErrSimulatedUpstreamFailure = errors.New("simulated upstream failure")
+
+var Simulate = func(
+	ctx context.Context,
 	name string,
 	minLatency time.Duration,
 	maxLatency time.Duration,
-	failureRate int) error {
+	failureRate int,
+) error {
 	return simulate(ctx, name, minLatency, maxLatency, failureRate)
 }
 
@@ -48,7 +53,7 @@ func simulate(
 	}
 
 	if rand.IntN(100) < failureRate {
-		return fmt.Errorf("%s: simulated upstream failure", name)
+		return fmt.Errorf("%s: %w", name, ErrSimulatedUpstreamFailure)
 	}
 
 	return nil

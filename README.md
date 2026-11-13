@@ -28,6 +28,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - IDR price formatting, for example `Rp 1.250.000`
 - Arrival-after-departure validation
 - Simulated provider latency and AirAsia 10% failure rate
+- Per-provider timeout and retry with exponential backoff
 - Bounded in-memory LRU search cache with a 5-minute TTL and `cache_hit` metadata
 
 ## Project structure
@@ -48,7 +49,9 @@ internal/
   src/model/                 Shared domain models and helpers
 pkg/
   log/                       Logging helpers
+  resilience/                Generic timeout and retry engine
   response/                  HTTP response helpers
+  simulation/                Provider latency and failure simulation
 external/                    Mock provider responses
 docs/openapi.yaml            OpenAPI 3 specification
 ```
@@ -396,6 +399,21 @@ AirAsia additionally has a **10% simulated failure rate**. A failed AirAsia call
 
 Because responses are cached, repeated identical searches may return immediately with `cache_hit: true`. Use a different search or sort parameter to observe the provider delays again.
 
+## Provider resilience
+
+Each provider is wrapped with configurable timeout and retry settings. Defaults:
+
+- A **1-second per-attempt timeout**
+- Up to **3 attempts** total
+- Exponential backoff of **50ms → 100ms → 250ms**
+
+Only transient failures are retried:
+
+- Simulated upstream failures
+- Context deadline exceeded
+
+Configuration or parsing errors are not retried. If a provider still fails after all attempts, it is treated as a partial provider failure when other providers succeed.
+
 ## Caching
 
 Search results are cached in memory using a bounded LRU cache with a 5-minute TTL and a maximum of 10,000 entries. The cache is injected into the usecase from the application entry point, so the cache implementation can be replaced without changing the usecase logic.
@@ -423,6 +441,16 @@ AirAsia = "external/airasia_search_response.json"
 BatikAir = "external/batik_air_search_response.json"
 GarudaIndonesia = "external/garuda_indonesia_search_response.json"
 LionAir = "external/lion_air_search_response.json"
+
+[Cache]
+MaxEntries = 10000
+TTLSeconds = 300
+
+[Provider]
+TimeoutMs = 1000
+MaxAttempts = 3
+InitialBackoffMs = 50
+MaxBackoffMs = 250
 ```
 
 ## Make targets
@@ -440,5 +468,5 @@ make openapi   # Show OpenAPI specification path
 
 ## Notes and current limitations
 
-- Cross-provider price comparison for the same flight and best-value ranking are not implemented yet.
+- Cross-provider price comparison for the same flight is not implemented yet.
 - The project currently has no automated test files; `make test` compiles and runs the Go test suite.
