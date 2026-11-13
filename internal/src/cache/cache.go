@@ -19,9 +19,18 @@ type item[T any] struct {
 type lruCache[T any] struct {
 	entries *lru.Cache[string, item[T]]
 	ttl     time.Duration
+	now     func() time.Time
 }
 
 func New[T any](maxEntries int, ttl time.Duration) (Cache[T], error) {
+	return newCache[T](maxEntries, ttl, time.Now)
+}
+
+func newCache[T any](
+	maxEntries int,
+	ttl time.Duration,
+	now func() time.Time,
+) (Cache[T], error) {
 	entries, err := lru.New[string, item[T]](maxEntries)
 	if err != nil {
 		return nil, err
@@ -30,6 +39,7 @@ func New[T any](maxEntries int, ttl time.Duration) (Cache[T], error) {
 	return &lruCache[T]{
 		entries: entries,
 		ttl:     ttl,
+		now:     now,
 	}, nil
 }
 
@@ -40,7 +50,7 @@ func (c *lruCache[T]) Get(key string) (T, bool) {
 		return zero, false
 	}
 
-	if time.Now().After(entry.expiresAt) {
+	if c.now().After(entry.expiresAt) {
 		c.entries.Remove(key)
 
 		var zero T
@@ -53,6 +63,6 @@ func (c *lruCache[T]) Get(key string) (T, bool) {
 func (c *lruCache[T]) Set(key string, value T) {
 	c.entries.Add(key, item[T]{
 		value:     value,
-		expiresAt: time.Now().Add(c.ttl),
+		expiresAt: c.now().Add(c.ttl),
 	})
 }
