@@ -83,11 +83,14 @@ paths:
             Comma-separated sort keys. The first key is the primary sort,
             subsequent keys are tie-breakers. Flight ID is the final
             deterministic tie-breaker. Defaults to `price_asc`.
+
+            `best_value` ranks by normalized price (60%), duration (30%),
+            and stops (10%). `best_value` and `best_value_asc` are equivalent.
           schema:
             type: string
             default: price_asc
-            pattern: '^((price|duration|departure|arrival)_(asc|desc))(,((price|duration|departure|arrival)_(asc|desc)))*$'
-            example: price_asc,duration_asc
+            pattern: '^((price|duration|departure|arrival)_(asc|desc)|best_value(_asc|_desc)?)(,((price|duration|departure|arrival)_(asc|desc)|best_value(_asc|_desc)?))*$'
+            example: best_value
         - name: min_price
           in: query
           required: false
@@ -188,12 +191,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                header:
+                  error: 'invalid input: empty origin'
         '500':
-          description: Search failed because providers were unavailable or an internal error occurred.
+          description: |
+            Search failed because all providers were unavailable or an internal
+            error occurred. Provider errors are joined with newline characters.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                header:
+                  error: |-
+                    all provider down
+                    GarudaIndonesia: error oppening files open external/garuda_indonesa_search_response.json: no such file or directory
+                    AirAsia: error oppening files open external/airasia_search_respose.json: no such file or directory
+                    LionAir: error opening file: open external/lion_air_search_respons.json: no such file or directory
+                    BatikAir: error oppening files open external/batik_air_search_resonse.json: no such file or directory
 
 components:
   schemas:
@@ -436,4 +452,7 @@ components:
           properties:
             error:
               type: string
+              description: |
+                Human-readable error message. For all-provider failures, this
+                contains the joined provider errors separated by newlines.
               example: 'invalid input: empty origin'

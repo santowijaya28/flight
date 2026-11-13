@@ -33,7 +33,7 @@ func (u *usecase) Search(ctx context.Context, in model.SearchInput) (response mo
 
 	// Partial provider failures are logged by the repository and returned as
 	// successful partial results. Only cache fully successful searches.
-	if cacheKeyErr == nil && providerErr == nil {
+	if cacheKeyErr == nil && providerErr == nil && len(res.Flights) > 0 {
 		u.cache.Set(cacheKey, res)
 	}
 

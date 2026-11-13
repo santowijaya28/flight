@@ -21,6 +21,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
   - duration
   - departure time
   - arrival time
+  - best value
 - Multiple sort keys, for example `price_asc,duration_asc`
 - Timezone-aware parsing and WIB/WITA/WIT labels
 - Normalized baggage, amenities, aircraft, duration, and price
@@ -139,12 +140,26 @@ departure_asc
 departure_desc
 arrival_asc
 arrival_desc
+best_value
+best_value_asc
+best_value_desc
 ```
+
+`best_value` ranks flights using normalized values within the current result set:
+
+```text
+60% price
+30% duration
+10% stops
+```
+
+Lower scores are better. `best_value` and `best_value_asc` are equivalent.
 
 Multiple sort keys:
 
 ```text
 sort=price_asc,duration_asc
+sort=best_value,price_asc
 sort=duration_asc,price_asc
 sort=departure_asc,price_asc
 ```
@@ -180,6 +195,18 @@ curl -s --get 'http://localhost:8000/search' \
   --data-urlencode 'passengers=1' \
   --data-urlencode 'cabin_class=economy' \
   --data-urlencode 'sort=price_asc,duration_asc'
+```
+
+Search ranked by best value:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'cabin_class=economy' \
+  --data-urlencode 'sort=best_value'
 ```
 
 Search with price, stops, airline, and duration filters:
@@ -315,6 +342,30 @@ This returns `400 Bad Request`.
   ]
 }
 ```
+
+### Error responses
+
+Validation and request errors return a JSON error envelope:
+
+```json
+{
+  "header": {
+    "error": "invalid input: empty origin"
+  }
+}
+```
+
+When every provider fails, the service returns HTTP `500` and joins the provider errors into a single newline-separated message:
+
+```json
+{
+  "header": {
+    "error": "all provider down\nGarudaIndonesia: error oppening files open external/garuda_indonesa_search_response.json: no such file or directory\nAirAsia: error oppening files open external/airasia_search_respose.json: no such file or directory\nLionAir: error opening file: open external/lion_air_search_respons.json: no such file or directory\nBatikAir: error oppening files open external/batik_air_search_resonse.json: no such file or directory"
+  }
+}
+```
+
+Partial provider failures are treated as successful partial results and return HTTP `200`, with failures reflected in `metadata.providers_failed`.
 
 ## OpenAPI
 

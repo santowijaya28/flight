@@ -19,6 +19,14 @@ const (
 	sortDepartureDesc
 	sortArrivalAsc
 	sortArrivalDesc
+	sortBestValueAsc
+	sortBestValueDesc
+)
+
+const (
+	bestValuePriceWeight    = 0.60
+	bestValueDurationWeight = 0.30
+	bestValueStopsWeight    = 0.10
 )
 
 func parseSort(value string) ([]sortOption, error) {
@@ -68,18 +76,27 @@ func parseSortOption(value string) (sortOption, error) {
 		return sortArrivalAsc, nil
 	case "arrival_desc":
 		return sortArrivalDesc, nil
+	case "best_value", "best_value_asc":
+		return sortBestValueAsc, nil
+	case "best_value_desc":
+		return sortBestValueDesc, nil
 	default:
 		return 0, fmt.Errorf("%w: invalid sort %q", model.ErrInvalidInput, value)
 	}
 }
 
 func sortFlights(flights []model.Flight, options []sortOption) {
+	var scores map[string]float64
+	if requiresBestValue(options) {
+		scores = bestValueScores(flights)
+	}
+
 	sort.SliceStable(flights, func(i, j int) bool {
 		a := flights[i]
 		b := flights[j]
 
 		for _, option := range options {
-			comparison := compareFlight(a, b, option)
+			comparison := compareFlight(a, b, option, scores)
 			if comparison == 0 {
 				continue
 			}
@@ -91,7 +108,7 @@ func sortFlights(flights []model.Flight, options []sortOption) {
 	})
 }
 
-func compareFlight(a, b model.Flight, option sortOption) int {
+func compareFlight(a, b model.Flight, option sortOption, scores map[string]float64) int {
 	switch option {
 	case sortPriceAsc:
 		return compareFloat(a.Price.Amount, b.Price.Amount)
@@ -109,9 +126,85 @@ func compareFlight(a, b model.Flight, option sortOption) int {
 		return compareInt64(a.Arrival.Timestamp, b.Arrival.Timestamp)
 	case sortArrivalDesc:
 		return compareInt64(b.Arrival.Timestamp, a.Arrival.Timestamp)
+	case sortBestValueAsc:
+		return compareFloat(scores[a.ID], scores[b.ID])
+	case sortBestValueDesc:
+		return compareFloat(scores[b.ID], scores[a.ID])
 	default:
 		return 0
 	}
+}
+
+func requiresBestValue(options []sortOption) bool {
+	for _, option := range options {
+		if option == sortBestValueAsc || option == sortBestValueDesc {
+			return true
+		}
+	}
+
+	return false
+}
+
+func bestValueScores(flights []model.Flight) map[string]float64 {
+	if len(flights) == 0 {
+		return nil
+	}
+
+	minPrice := flights[0].Price.Amount
+	maxPrice := flights[0].Price.Amount
+
+	minDuration := float64(flights[0].Duration.TotalMinutes)
+	maxDuration := float64(flights[0].Duration.TotalMinutes)
+
+	minStops := float64(flights[0].Stops)
+	maxStops := float64(flights[0].Stops)
+
+	for _, flight := range flights[1:] {
+		price := flight.Price.Amount
+		if price < minPrice {
+			minPrice = price
+		}
+		if price > maxPrice {
+			maxPrice = price
+		}
+
+		duration := float64(flight.Duration.TotalMinutes)
+		if duration < minDuration {
+			minDuration = duration
+		}
+		if duration > maxDuration {
+			maxDuration = duration
+		}
+
+		stops := float64(flight.Stops)
+		if stops < minStops {
+			minStops = stops
+		}
+		if stops > maxStops {
+			maxStops = stops
+		}
+	}
+
+	scores := make(map[string]float64, len(flights))
+	for _, flight := range flights {
+		priceScore := normalizeBestValue(flight.Price.Amount, minPrice, maxPrice)
+		durationScore := normalizeBestValue(float64(flight.Duration.TotalMinutes), minDuration, maxDuration)
+		stopsScore := normalizeBestValue(float64(flight.Stops), minStops, maxStops)
+
+		scores[flight.ID] = bestValuePriceWeight*priceScore +
+			bestValueDurationWeight*durationScore +
+			bestValueStopsWeight*stopsScore
+	}
+
+	return scores
+}
+
+func normalizeBestValue(value, minValue, maxValue float64) float64 {
+	if maxValue <= minValue {
+		return 0
+	}
+
+	return (value - minValue) / (maxValue - minValue)
 }
 
 func compareInt64(a, b int64) int {
