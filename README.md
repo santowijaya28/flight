@@ -26,7 +26,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - Normalized baggage, amenities, aircraft, duration, and price
 - IDR price formatting, for example `Rp 1.250.000`
 - Arrival-after-departure validation
-- In-memory search cache with a 5-minute TTL and `cache_hit` metadata
+- Bounded in-memory LRU search cache with a 5-minute TTL and `cache_hit` metadata
 
 ## Project structure
 
@@ -331,10 +331,14 @@ You can open the file with Swagger Editor, Redoc, Postman, or another OpenAPI-co
 
 ## Caching
 
-Search results are cached in memory for 5 minutes. The cache key includes the full normalized search input, including filters and sort keys.
+Search results are cached in memory using a bounded LRU cache with a 5-minute TTL and a maximum of 10,000 entries. The cache is injected into the usecase from the application entry point, so the cache implementation can be replaced without changing the usecase logic.
+
+The cache key includes the full normalized search input, including filters and sort keys.
 
 - First request: `cache_hit: false`
 - Repeated request within the TTL: `cache_hit: true`
+- When the cache reaches capacity, the least-recently used entry is evicted
+- Expired entries are removed on access or by LRU eviction
 
 ## Configuration
 

@@ -8,12 +8,12 @@ import (
 
 type usecase struct {
 	repo  repository.ProviderRepo
-	cache *cache.Cache[model.SearchResult]
+	cache cache.Cache[model.SearchResult]
 }
 
-func Init(repo repository.ProviderRepo) *usecase {
+func Init(repo repository.ProviderRepo, searchCache cache.Cache[model.SearchResult]) *usecase {
 	return &usecase{
 		repo:  repo,
-		cache: cache.New[model.SearchResult](searchCacheTTL),
+		cache: searchCache,
 	}
 }

@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/flight/internal/src/model"
 )
-
-const searchCacheTTL = 5 * time.Minute
 
 func buildCacheKey(in model.SearchInput) (string, error) {
 	normalized := in
