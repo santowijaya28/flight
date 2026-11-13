@@ -10,8 +10,7 @@ import (
 
 func Test_buildSearchResponse(t *testing.T) {
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for target function.
+		name         string
 		in           model.SearchInput
 		res          model.SearchResult
 		cacheHit     bool

@@ -399,3 +399,30 @@ func writeTempFile(t *testing.T, data []byte) string {
 	}
 	return path
 }
+
+func Test_capitalizeFirst(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{
+			name:  "success",
+			value: "test",
+			want:  "Test",
+		},
+		{
+			name:  "empty string",
+			value: "",
+			want:  "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := capitalizeFirst(tt.value)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("capitalizeFirst() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
