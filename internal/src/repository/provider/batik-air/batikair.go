@@ -50,6 +50,13 @@ func parseResponseData(in BatikAirSearchResp, criteria model.SearchInput) (res m
 			return res, err
 		}
 
+		if err := model.ValidateArrivalAfterDeparture(departureTS, arrivalTS); err != nil {
+			return res, err
+		}
+
+		departureDatetime, departureTimezone := model.FormatAirportDateTime(departureDatetime, f.Origin)
+		arrivallDatetime, arrivalTimezone := model.FormatAirportDateTime(arrivallDatetime, f.Destination)
+
 		totalMinutes := (arrivalTS - departureTS) / 60
 
 		fl := model.Flight{
@@ -63,12 +70,14 @@ func parseResponseData(in BatikAirSearchResp, criteria model.SearchInput) (res m
 			Departure: model.Departure{
 				Airport:   f.Origin,
 				City:      model.CityByAirportCode[f.Origin],
+				Timezone:  departureTimezone,
 				DateTime:  departureDatetime,
 				Timestamp: departureTS,
 			},
 			Arrival: model.Arrival{
 				Airport:   f.Destination,
 				City:      model.CityByAirportCode[f.Destination],
+				Timezone:  arrivalTimezone,
 				DateTime:  arrivallDatetime,
 				Timestamp: arrivalTS,
 			},
@@ -78,8 +87,9 @@ func parseResponseData(in BatikAirSearchResp, criteria model.SearchInput) (res m
 			},
 			Stops: len(f.Connections),
 			Price: model.Price{
-				Amount:   f.Fare.TotalPrice,
-				Currency: f.Fare.CurrencyCode,
+				Amount:    f.Fare.TotalPrice,
+				Currency:  f.Fare.CurrencyCode,
+				Formatted: model.FormatIDR(f.Fare.TotalPrice),
 			},
 			AvailableSeats: int64(f.SeatsAvailable),
 			CabinClass:     cabinClass,

@@ -3,13 +3,23 @@ package model
 import "time"
 
 type SearchInput struct {
-	Origin        string     `json:"origin"`
-	Destination   string     `json:"destination"`
-	DepartureDate time.Time  `json:"departureDate"`
-	ReturnDate    *time.Time `json:"returnDate"`
-	Passengers    int        `json:"passengers"`
-	CabinClass    string     `json:"cabinClass"`
-	Sort          string     `json:"sort"`
+	Origin             string     `json:"origin"`
+	Destination        string     `json:"destination"`
+	DepartureDate      time.Time  `json:"departureDate"`
+	ReturnDate         *time.Time `json:"returnDate"`
+	Passengers         int        `json:"passengers"`
+	CabinClass         string     `json:"cabinClass"`
+	Sort               string     `json:"sort"`
+	MinPrice           *float64   `json:"minPrice,omitempty"`
+	MaxPrice           *float64   `json:"maxPrice,omitempty"`
+	MaxStops           *int       `json:"maxStops,omitempty"`
+	Airlines           []string   `json:"airlines,omitempty"`
+	MinDurationMinutes *int64     `json:"minDurationMinutes,omitempty"`
+	MaxDurationMinutes *int64     `json:"maxDurationMinutes,omitempty"`
+	DepartureFrom      string     `json:"departureFrom,omitempty"`
+	DepartureTo        string     `json:"departureTo,omitempty"`
+	ArrivalFrom        string     `json:"arrivalFrom,omitempty"`
+	ArrivalTo          string     `json:"arrivalTo,omitempty"`
 }
 
 type SearchResult struct {
@@ -73,6 +83,7 @@ type AirLine struct {
 type Departure struct {
 	Airport   string `json:"airport"`
 	City      string `json:"city"`
+	Timezone  string `json:"timezone,omitempty"`
 	DateTime  string `json:"datetime"`
 	Timestamp int64  `json:"timestamp"`
 }
@@ -80,6 +91,7 @@ type Departure struct {
 type Arrival struct {
 	Airport   string `json:"airport"`
 	City      string `json:"city"`
+	Timezone  string `json:"timezone,omitempty"`
 	DateTime  string `json:"datetime"`
 	Timestamp int64  `json:"timestamp"`
 }
@@ -90,8 +102,9 @@ type Duration struct {
 }
 
 type Price struct {
-	Amount   float64 `json:"amount"`
-	Currency string  `json:"currency"`
+	Amount    float64 `json:"amount"`
+	Currency  string  `json:"currency"`
+	Formatted string  `json:"formatted"`
 }
 
 type Baggage struct {

@@ -79,6 +79,13 @@ func parseResponseData(in GarudaIndonesiaSearchResp, criteria model.SearchInput)
 			return res, err
 		}
 
+		if err := model.ValidateArrivalAfterDeparture(departureTS, arrivalTS); err != nil {
+			return res, err
+		}
+
+		departureDatetime, departureTimezone := model.FormatAirportDateTime(departureDatetime, departureAirport)
+		arrivalDatetime, arrivalTimezone := model.FormatAirportDateTime(arrivalDatetime, arrivalAirport)
+
 		totalMinutes := (arrivalTS - departureTS) / 60
 		baggage := model.NormalizeBaggage(parseGarudaBaggage(f.Baggage))
 
@@ -93,12 +100,14 @@ func parseResponseData(in GarudaIndonesiaSearchResp, criteria model.SearchInput)
 			Departure: model.Departure{
 				Airport:   departureAirport,
 				City:      departureCity,
+				Timezone:  departureTimezone,
 				DateTime:  departureDatetime,
 				Timestamp: departureTS,
 			},
 			Arrival: model.Arrival{
 				Airport:   arrivalAirport,
 				City:      arrivalCity,
+				Timezone:  arrivalTimezone,
 				DateTime:  arrivalDatetime,
 				Timestamp: arrivalTS,
 			},
@@ -109,8 +118,9 @@ func parseResponseData(in GarudaIndonesiaSearchResp, criteria model.SearchInput)
 			Stops:     stops,
 			Amenities: model.NormalizeAmenities(f.Amenities),
 			Price: model.Price{
-				Amount:   f.Price.Amount,
-				Currency: f.Price.Currency,
+				Amount:    f.Price.Amount,
+				Currency:  f.Price.Currency,
+				Formatted: model.FormatIDR(f.Price.Amount),
 			},
 			AvailableSeats: int64(f.AvailableSeats),
 			CabinClass:     f.FareClass,

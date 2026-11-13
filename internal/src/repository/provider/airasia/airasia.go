@@ -49,6 +49,13 @@ func parseResponseData(in AirAsiaSearchResponse, criteria model.SearchInput) (re
 			return res, err
 		}
 
+		if err := model.ValidateArrivalAfterDeparture(departureTS, arrivalTS); err != nil {
+			return res, err
+		}
+
+		departureDatetime, departureTimezone := model.FormatAirportDateTime(departureDatetime, f.FromAirport)
+		arrivallDatetime, arrivalTimezone := model.FormatAirportDateTime(arrivallDatetime, f.ToAirport)
+
 		totalMinutes := (arrivalTS - departureTS) / 60
 		baggage := parseAirAsiaBaggage(f.BaggageNotes)
 
@@ -63,12 +70,14 @@ func parseResponseData(in AirAsiaSearchResponse, criteria model.SearchInput) (re
 			Departure: model.Departure{
 				Airport:   f.FromAirport,
 				City:      model.CityByAirportCode[f.FromAirport],
+				Timezone:  departureTimezone,
 				DateTime:  departureDatetime,
 				Timestamp: departureTS,
 			},
 			Arrival: model.Arrival{
 				Airport:   f.ToAirport,
 				City:      model.CityByAirportCode[f.ToAirport],
+				Timezone:  arrivalTimezone,
 				DateTime:  arrivallDatetime,
 				Timestamp: arrivalTS,
 			},
@@ -78,8 +87,9 @@ func parseResponseData(in AirAsiaSearchResponse, criteria model.SearchInput) (re
 			},
 			Stops: len(f.Stops),
 			Price: model.Price{
-				Amount:   f.PriceIDR,
-				Currency: "IDR",
+				Amount:    f.PriceIDR,
+				Currency:  "IDR",
+				Formatted: model.FormatIDR(f.PriceIDR),
 			},
 			AvailableSeats: f.Seats,
 			CabinClass:     f.CabinClass,

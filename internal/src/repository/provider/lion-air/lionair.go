@@ -60,6 +60,13 @@ func parseResponseData(in LionAirSearchResp, criteria model.SearchInput) (res mo
 			return res, err
 		}
 
+		if err := model.ValidateArrivalAfterDeparture(departureTS, arrivalTS); err != nil {
+			return res, err
+		}
+
+		departureDatetime, departureTimezone := model.FormatAirportDateTime(departureDatetime, f.Route.From.Code)
+		arrivalDatetime, arrivalTimezone := model.FormatAirportDateTime(arrivalDatetime, f.Route.To.Code)
+
 		totalMinutes := (arrivalTS - departureTS) / 60
 		stops := f.StopCount
 		if stops == 0 {
@@ -85,12 +92,14 @@ func parseResponseData(in LionAirSearchResp, criteria model.SearchInput) (res mo
 			Departure: model.Departure{
 				Airport:   strings.ToUpper(f.Route.From.Code),
 				City:      f.Route.From.City,
+				Timezone:  departureTimezone,
 				DateTime:  departureDatetime,
 				Timestamp: departureTS,
 			},
 			Arrival: model.Arrival{
 				Airport:   strings.ToUpper(f.Route.To.Code),
 				City:      f.Route.To.City,
+				Timezone:  arrivalTimezone,
 				DateTime:  arrivalDatetime,
 				Timestamp: arrivalTS,
 			},
@@ -100,8 +109,9 @@ func parseResponseData(in LionAirSearchResp, criteria model.SearchInput) (res mo
 			},
 			Stops: stops,
 			Price: model.Price{
-				Amount:   f.Pricing.Total,
-				Currency: f.Pricing.Currency,
+				Amount:    f.Pricing.Total,
+				Currency:  f.Pricing.Currency,
+				Formatted: model.FormatIDR(f.Pricing.Total),
 			},
 			AvailableSeats: int64(f.SeatsLeft),
 			CabinClass:     cabinClass,
