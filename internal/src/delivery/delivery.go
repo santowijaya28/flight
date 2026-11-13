@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -62,6 +63,7 @@ func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
 		param.Passengers = passenger
 	}
 	param.CabinClass = r.URL.Query().Get("cabin_class")
+	param.Sort = r.URL.Query().Get("sort")
 
 	err := validateSearchInput(param)
 	if err != nil {
@@ -75,11 +77,16 @@ func (d *delivery) Search(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := d.useCase.Search(r.Context(), param)
 	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if errors.Is(err, model.ErrInvalidInput) {
+			statusCode = http.StatusBadRequest
+		}
+
 		log.Errorf("failed to search flight %s", err.Error())
 		response.WriteErrorResponse(w, response.Response{
 			Data:           nil,
 			Error:          err.Error(),
-			HttpStatusCode: http.StatusInternalServerError,
+			HttpStatusCode: statusCode,
 		})
 		return
 	}

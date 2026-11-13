@@ -9,6 +9,7 @@ type SearchInput struct {
 	ReturnDate    *time.Time `json:"returnDate"`
 	Passengers    int        `json:"passengers"`
 	CabinClass    string     `json:"cabinClass"`
+	Sort          string     `json:"sort"`
 }
 
 type SearchResult struct {
@@ -35,12 +36,12 @@ type SearchMetadata struct {
 }
 
 type SearchCriteria struct {
-	Origin        string     `json:"origin"`
-	Destination   string     `json:"destination"`
-	DepartureDate time.Time  `json:"departureDate"`
-	ReturnDate    *time.Time `json:"returnDate"`
-	Passengers    int        `json:"passengers"`
-	CabinClass    string     `json:"cabinClass"`
+	Origin        string  `json:"origin"`
+	Destination   string  `json:"destination"`
+	DepartureDate string  `json:"departure_date"`
+	ReturnDate    *string `json:"return_date,omitempty"`
+	Passengers    int     `json:"passengers"`
+	CabinClass    string  `json:"cabin_class"`
 }
 
 type Flight struct {
