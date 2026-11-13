@@ -22,6 +22,10 @@ func WithResilience(
 	initialBackoff time.Duration,
 	maxBackoff time.Duration,
 ) Provider {
+	if next == nil {
+		return nil
+	}
+
 	return &resilientProvider{
 		next: next,
 		policy: resilience.Policy{

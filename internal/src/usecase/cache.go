@@ -10,12 +10,16 @@ import (
 
 func buildCacheKey(in model.SearchInput) (string, error) {
 	normalized := in
+
 	normalized.Origin = strings.ToUpper(strings.TrimSpace(in.Origin))
 	normalized.Destination = strings.ToUpper(strings.TrimSpace(in.Destination))
+
 	normalized.CabinClass = strings.ToLower(strings.TrimSpace(in.CabinClass))
 	normalized.Sort = strings.ToLower(strings.TrimSpace(in.Sort))
+
 	normalized.DepartureFrom = strings.TrimSpace(in.DepartureFrom)
 	normalized.DepartureTo = strings.TrimSpace(in.DepartureTo)
+
 	normalized.ArrivalFrom = strings.TrimSpace(in.ArrivalFrom)
 	normalized.ArrivalTo = strings.TrimSpace(in.ArrivalTo)
 

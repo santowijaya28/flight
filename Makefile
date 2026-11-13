@@ -40,7 +40,7 @@ tidy:
 	$(GO) mod tidy
 
 mocks:
-	$(GO) generate ./internal/src/usecase
+	$(GO) generate ./internal/src/usecase ./internal/src/repository/provider
 
 clean:
 	rm -rf $(BIN_DIR)
