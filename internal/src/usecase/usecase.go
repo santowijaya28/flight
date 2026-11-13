@@ -29,6 +29,7 @@ func (u *usecase) Search(ctx context.Context, in model.SearchInput) (response mo
 	}
 
 	sortFlights(res.Flights, sortOptions)
+	// set cache hit as false
 	response = buildSearchResponse(in, res, false, res.SearchTimeMs)
 
 	// Partial provider failures are logged by the repository and returned as

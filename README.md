@@ -1,4 +1,4 @@
-# Flight Search API
+# Flight Search APP
 
 Flight search and aggregation service for the BookCabin take-home assignment. It loads mock responses from four airline providers, normalizes them into a common format, filters and sorts the combined result set, and exposes the data through an HTTP API.
 
@@ -30,6 +30,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - Simulated provider latency and AirAsia 10% failure rate
 - Per-provider timeout and retry with exponential backoff
 - Bounded in-memory LRU search cache with a 30-second TTL and `cache_hit` metadata
+- Table-driven unit tests with generated mocks
 
 ## Project structure
 
@@ -437,20 +438,80 @@ Default values:
 
 ```ini
 [MockDataPath]
-AirAsia = "external/airasia_search_response.json"
-BatikAir = "external/batik_air_search_response.json"
-GarudaIndonesia = "external/garuda_indonesia_search_response.json"
-LionAir = "external/lion_air_search_response.json"
+  AirAsia = "external/airasia_search_response.json"
+  BatikAir = "external/batik_air_search_response.json"
+  GarudaIndonesia = "external/garuda_indonesia_search_response.json"
+  LionAir = "external/lion_air_search_response.json"
 
 [Cache]
-MaxEntries = 10000
-TTLSeconds = 30
+  MaxEntries = 10000
+  TTLSeconds = 30
 
 [Provider]
-TimeoutMs = 1000
-MaxAttempts = 3
-InitialBackoffMs = 50
-MaxBackoffMs = 250
+  TimeoutMs = 1000
+  MaxAttempts = 3
+  InitialBackoffMs = 50
+  MaxBackoffMs = 250
+```
+
+## Testing
+
+Run all tests:
+
+```bash
+go test ./...
+```
+
+Run with coverage:
+
+```bash
+go test ./... -cover
+```
+
+Generate a coverage profile:
+
+```bash
+go test ./... -covermode=atomic -coverprofile=coverage.out
+go tool cover -func=coverage.out
+```
+
+The test suite is table-driven and uses generated mocks from `go.uber.org/mock`.
+
+Current package coverage:
+
+| Package | Coverage |
+|---|---:|
+| `internal/src/cache` | 100.0% |
+| `internal/src/config` | 81.8% |
+| `internal/src/delivery` | 96.8% |
+| `internal/src/model` | 100.0% |
+| `internal/src/repository` | 100.0% |
+| `internal/src/repository/filter` | 100.0% |
+| `internal/src/repository/provider` | 100.0% |
+| `internal/src/repository/provider/airasia` | 98.6% |
+| `internal/src/repository/provider/batik-air` | 98.6% |
+| `internal/src/repository/provider/garuda-indonesia` | 99.3% |
+| `internal/src/repository/provider/lion-air` | 97.1% |
+| `internal/src/usecase` | 98.3% |
+| `pkg/log` | 100.0% |
+| `pkg/resilience` | 96.8% |
+| `pkg/response` | 100.0% |
+| `pkg/simulation` | 90.0% |
+
+`cmd/rest` is not yet covered by unit tests.
+
+Generated mocks:
+
+```text
+internal/src/usecase/mocks/mock_usecase.go
+internal/src/repository/mocks/mock_provider_repo.go
+internal/src/repository/provider/mocks/mock_provider.go
+```
+
+Regenerate them with:
+
+```bash
+make mocks
 ```
 
 ## Make targets
@@ -462,7 +523,7 @@ make test      # Run Go tests
 make vet       # Run go vet
 make fmt       # Format all Go files
 make tidy      # Run go mod tidy
-make mocks     # Generate usecase mocks
+make mocks     # Generate usecase, repository, and provider mocks
 make clean     # Remove build artifacts
 make openapi   # Show OpenAPI specification path
 ```
@@ -470,4 +531,3 @@ make openapi   # Show OpenAPI specification path
 ## Notes and current limitations
 
 - Cross-provider price comparison for the same flight is not implemented yet.
-- The project currently has no automated test files; `make test` compiles and runs the Go test suite.

@@ -17,6 +17,8 @@ type repository struct {
 	flightProvider map[string]provider.Provider
 }
 
+//go:generate go run go.uber.org/mock/mockgen -source=types.go -destination=mocks/mock_provider_repo.go -package=mocks
+
 type ProviderRepo interface {
 	Search(ctx context.Context, in model.SearchInput) (res model.SearchResult, err error)
 }
