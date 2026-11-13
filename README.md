@@ -26,6 +26,7 @@ Flight search and aggregation service for the BookCabin take-home assignment. It
 - Normalized baggage, amenities, aircraft, duration, and price
 - IDR price formatting, for example `Rp 1.250.000`
 - Arrival-after-departure validation
+- In-memory search cache with a 5-minute TTL and `cache_hit` metadata
 
 ## Project structure
 
@@ -149,6 +150,106 @@ sort=departure_asc,price_asc
 
 When all requested keys are equal, flights are ordered by flight ID for deterministic output.
 
+### Sample curl requests
+
+Health check:
+
+```bash
+curl -s http://localhost:8000/ping
+```
+
+Basic search:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'cabin_class=economy'
+```
+
+Search with sorting:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'cabin_class=economy' \
+  --data-urlencode 'sort=price_asc,duration_asc'
+```
+
+Search with price, stops, airline, and duration filters:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'cabin_class=economy' \
+  --data-urlencode 'min_price=500000' \
+  --data-urlencode 'max_price=1000000' \
+  --data-urlencode 'max_stops=1' \
+  --data-urlencode 'airlines=QZ,JT' \
+  --data-urlencode 'min_duration=90' \
+  --data-urlencode 'max_duration=240' \
+  --data-urlencode 'sort=price_asc'
+```
+
+Direct flights only:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'max_stops=0'
+```
+
+Search with departure and arrival time windows:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'departure_from=06:00' \
+  --data-urlencode 'departure_to=18:00' \
+  --data-urlencode 'arrival_from=08:00' \
+  --data-urlencode 'arrival_to=23:00'
+```
+
+Check cache behavior by running the same request twice:
+
+```bash
+curl -s --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=2025-12-15' \
+  --data-urlencode 'passengers=1' \
+  --data-urlencode 'sort=price_asc' \
+  | jq '.metadata.cache_hit'
+```
+
+The first response returns `false`; an identical request within 5 minutes returns `true`.
+
+Invalid request example:
+
+```bash
+curl -i --get 'http://localhost:8000/search' \
+  --data-urlencode 'origin=CGK' \
+  --data-urlencode 'destination=DPS' \
+  --data-urlencode 'departure_date=invalid-date' \
+  --data-urlencode 'passengers=1'
+```
+
+This returns `400 Bad Request`.
+
 ### Example response
 
 ```json
@@ -165,7 +266,8 @@ When all requested keys are equal, flights are ordered by flight ID for determin
     "providers_queried": 4,
     "providers_succeeded": 4,
     "providers_failed": 0,
-    "search_time_ms": 1
+    "search_time_ms": 1,
+    "cache_hit": false
   },
   "flights": [
     {
@@ -227,6 +329,13 @@ make openapi
 
 You can open the file with Swagger Editor, Redoc, Postman, or another OpenAPI-compatible tool.
 
+## Caching
+
+Search results are cached in memory for 5 minutes. The cache key includes the full normalized search input, including filters and sort keys.
+
+- First request: `cache_hit: false`
+- Repeated request within the TTL: `cache_hit: true`
+
 ## Configuration
 
 Provider mock-data paths are configured in:
@@ -261,6 +370,5 @@ make openapi   # Show OpenAPI specification path
 ## Notes and current limitations
 
 - Mock provider delays and the AirAsia failure simulation are not implemented yet.
-- Caching and `cache_hit` metadata are not implemented yet.
 - Cross-provider price comparison for the same flight and best-value ranking are not implemented yet.
 - The project currently has no automated test files; `make test` compiles and runs the Go test suite.

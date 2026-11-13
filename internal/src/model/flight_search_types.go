@@ -43,6 +43,7 @@ type SearchMetadata struct {
 	ProvidersSucceeded int   `json:"providers_succeeded"`
 	ProvidersFailed    int   `json:"providers_failed"`
 	SearchTimeMs       int64 `json:"search_time_ms"`
+	CacheHit           bool  `json:"cache_hit"`
 }
 
 type SearchCriteria struct {
