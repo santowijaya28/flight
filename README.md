@@ -57,6 +57,65 @@ external/                    Mock provider responses
 docs/openapi.yaml            OpenAPI 3 specification
 ```
 
+## Data fetch flow
+
+```mermaid
+flowchart TD
+    A[Client: GET /search] --> B[Delivery: parse query parameters]
+    B --> C{Input valid?}
+    C -- No --> D[400 error envelope]
+    C -- Yes --> E[Usecase: parse sort and build cache key]
+    E --> F{Cache hit?}
+    F -- Yes --> G[Return cached result<br/>cache_hit=true]
+    F -- No --> H[Repository: fan out to providers]
+    H --> I[AirAsia]
+    H --> J[Batik Air]
+    H --> K[Garuda Indonesia]
+    H --> L[Lion Air]
+    I --> M[Simulate latency/failure]
+    J --> M
+    K --> M
+    L --> M
+    M --> N[Timeout and retry policy]
+    N --> O[Read and parse provider JSON]
+    O --> P[Normalize flight records]
+    P --> Q[Apply search filters]
+    Q --> R[Aggregate concurrently]
+    R --> S[Sort and rank]
+    S --> T[Build SearchResponse and metadata]
+    T --> U{All providers succeeded<br/>and flights exist?}
+    U -- Yes --> V[Store in LRU cache]
+    U -- No --> W[Skip cache]
+    V --> X[HTTP 200 JSON]
+    W --> X
+    G --> X
+```
+
+## Provider fetch and resilience
+
+```mermaid
+flowchart LR
+    A[Repository calls provider] --> B[Resilience policy]
+    B --> C[Per-attempt timeout]
+    C --> D[Simulate latency]
+    D --> E{Context canceled?}
+    E -- Yes --> F[Return context error]
+    E -- No --> G{Random failure?}
+    G -- Yes --> H[Return simulated failure]
+    G -- No --> I[Read mock JSON]
+    I --> J[Unmarshal response]
+    J --> K[Normalize and validate]
+    K --> L[Filter flights]
+    L --> M[Return SearchResult]
+    H --> N{Retryable and attempts remain?}
+    F --> O[Final error]
+    N -- Yes --> P[Wait exponential backoff]
+    P --> B
+    N -- No --> O
+    M --> Q[Repository aggregation]
+    O --> Q
+```
+
 ## Requirements
 
 - Go 1.27 or newer, as specified in `go.mod`
@@ -527,7 +586,3 @@ make mocks     # Generate usecase, repository, and provider mocks
 make clean     # Remove build artifacts
 make openapi   # Show OpenAPI specification path
 ```
-
-## Notes and current limitations
-
-- Cross-provider price comparison for the same flight is not implemented yet.
